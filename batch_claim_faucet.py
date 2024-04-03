@@ -169,14 +169,13 @@ async def claim_faucet(address: Union[Address, ChecksumAddress], google_token: s
                'referer': 'https://artio.faucet.berachain.com/', 
                'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"}
     params = {'address': address}
-    proxies = await get_ip(session)
+    myproxy = await get_ip(session)
+    proxies = {"https": myproxy}
+    asysession = AsyncSession(timeout=120,headers= headers, impersonate="chrome120",proxies=proxies)
 
-    asysession = AsyncSession(timeout=120,headers= headers, impersonate="chrome120",proxy=proxies)
-
-    response = await asysession.post(f'https://artio-80085-faucet-api-cf.berachain.com/api/claim?address={address}', headers=headers,
-                            data=json.dumps(params), params=params)
-    response_text = response.text()
-    if 'try again' not in response_text and 'message":"' in response_text:
+    response = await asysession.post(f'https://artio-80085-faucet-api-cf.berachain.com/api/claim?address={address}',data=json.dumps(params), params=params)
+    response_text = response.text
+    if 'try again' not in response_text and 'msg":"' in response_text:
         logger.success(response_text)
         await write_to_file(address)
     elif 'Txhash' in response_text:
